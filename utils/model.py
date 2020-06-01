@@ -10,13 +10,14 @@ from keras.layers.merge import concatenate
 from keras import regularizers
 
 class ModelBuilder():
+    '''Construct model for salgan and BCE
+    '''
 
-    # Build model
     @staticmethod
     def build_encoder(img_width,img_height,l2_norm):
         input_tensor = Input(shape=(img_width, img_height, 3))
-        vgg16 = VGG16(include_top=False, weights='model/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5', input_tensor=input_tensor)
-        # vgg16.layers.pop()
+        # vgg16 = VGG16(include_top=False, weights='model/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5', input_tensor=input_tensor)
+        vgg16 = VGG16(include_top=False, weights='imagenet', input_tensor=input_tensor)
 
         model_encoder = Sequential()
         model_encoder.add(InputLayer(input_shape=(img_height,img_width, 3)))
@@ -58,17 +59,19 @@ class ModelBuilder():
 
         return model_decoder
 
-    def generator(self,img_width,img_height,l2_norm):
+    def generator(self,img_width,img_height,l2_norm=0,load_model_path=None):
         model_encoder = self.build_encoder(img_width,img_height,l2_norm)
         model_decoder = self.build_decoder(img_width,img_height,l2_norm)
 
         model_generator = Model(input=model_encoder.input, output=model_decoder(model_encoder.output))
-        # model_generator.load_weights('model/generator_79_137.h5')
-        model_generator.load_weights('model/weights_original_l2_bce4.15.hdf5')
+
+        if load_model_path != None:
+            print('Loading model weights from {}'.format(load_model_path))
+            model_generator.load_weights(load_model_path)
         
         model_generator.summary()
 
-        return model_generator   
+        return model_generator
 
     @staticmethod
     def discriminator(img_width,img_height,l2_norm):
@@ -94,7 +97,6 @@ class ModelBuilder():
         model_discriminator.add(Dense(1,kernel_regularizer=regularizers.l2(l2_norm)))
         model_discriminator.add(Activation('sigmoid'))
 
-        # model_discriminator.load_weights('model/discriminator_79.h5')
         model_discriminator.summary()
 
         return model_discriminator
@@ -108,8 +110,10 @@ class ModelBuilder():
         return model
 
 class LossFunction():
-    
-    # Loss関数を自作
+    '''Original BCE loss mentioned in paper
+    1/4 downscaling using AveragePooling is conducted
+    '''
+
     @staticmethod
     def binary_crossentropy_forth(y_true, y_pred):
         y_true_forth = AveragePooling2D(pool_size=(4, 4), padding='valid')(y_true)

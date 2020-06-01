@@ -18,7 +18,7 @@ def parse_args():
 
     return parser.parse_args()
 
-
+# Preprocess for train and validation data
 def preprocess(image_dir,save_dir,save_flag,img_width,img_height):
 
     X_list = []
@@ -42,7 +42,7 @@ def preprocess(image_dir,save_dir,save_flag,img_width,img_height):
     np.save(os.path.join(save_dir,'X{}.npy'.format(save_flag)), X_list)
     np.save(os.path.join(save_dir,'Y{}.npy'.format(save_flag)), Y_list)
 
-
+# Preprocess for test data (no map file)
 def preprocess_test(image_dir,save_dir,save_flag,img_width,img_height):
 
     X_list = []
