@@ -1,12 +1,43 @@
 import os
+import argparse
 
-import matplotlib.pyplot as plt
 import numpy as np
+import keras
 from keras import optimizers
 
 from utils import model
 
-def load_data():
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Parameters for saliency map generator models.')
+
+    parser.add_argument('--model_name', type=str,
+                        help='name of model to use',
+                        choices=[
+                            "bce",
+                            "salgan",])
+    parser.add_argument('--data_path', type=str,
+                        help='path to .npy file of input data', default='original_data')
+    parser.add_argument('--num_epoch', type=int,
+                        help='number of epochs', default=121)
+    parser.add_argument('--batch_size', type=int,
+                        help='size of batch', default=32)
+    parser.add_argument('--l2_norm', type=float,
+                        help='parameter for l2 norm', default=0.0001)
+    parser.add_argument('--loss_alpha', type=float,
+                        help='weight alpha for loss calculation', default=0.005)
+    parser.add_argument('--image_size', type=list,
+                        help='size of input image [width,height]', default=[256,192])
+    parser.add_argument('--learning_rate', type=float,
+                        help='learning rate for model training', default=3e-4)
+    parser.add_argument('--model_save_ratio', type=int,
+                        help='ratio for model saving', default=4)
+
+    return parser.parse_args()
+
+
+def load_data(model_name):
     # load data
     X_train = np.load('data_original/Xtrain.npy').astype(np.float32)
     Y_train = np.load('data_original/Ytrain.npy').astype(np.float32)
@@ -14,37 +45,74 @@ def load_data():
     X_train /= 255
     Y_train = Y_train.reshape(Y_train.shape[0],Y_train.shape[1],Y_train.shape[2],1)/255
 
-    print(X_train.shape)
-    print(Y_train.shape)
+    if model_name == 'salgan':
+        return X_train, Y_train
 
-def save_all_weights(d, g, epoch_number):
+    elif model_name == 'bce':
+
+        X_val = np.load('data_original/Xval.npy')
+        Y_val = np.load('data_original/Yval.npy')
+
+        X_val /= 255
+        Y_val = Y_val.reshape(Y_val.shape[0],Y_val.shape[1],Y_train.val[2],1)/255
+
+        return X_train, Y_train, X_val, Y_val
+
+
+def save_all_weights(epoch_number, g, d):
     g.save_weights('model/generator_{}.h5'.format(epoch_number))
     d.save_weights('model/discriminator_{}.h5'.format(epoch_number))
 
-def train():
-    l2_norm = 0.0001
-    batch_size = 32
-    nb_epoch = 201
+def train_bce(args):
+    # parse parameters
+    l2_norm = args.l2_norm
+    batch_size = args.batch_size
+    num_epoch = args.num_epoch
+    learning_rate = args.learning_rate
+    img_width, img_height = args.image_size
+    model_save_ratio = args.model_save_ratio
+
+    X_train, Y_train, X_val, Y_val = load_data(args.model_name)
 
     model_builder = model.ModelBuilder()
+    model_generator = model_builder.generator(img_width=img_width,img_height=img_height,l2_norm=l2_norm)
 
-    model_generator = model_builder.generator(img_width=256,img_height=192,l2_norm=l2_norm)
-    model_discriminator = model_builder.discriminator(img_width=256,img_height=192,l2_norm=l2_norm)
+    model_generator.compile(loss=model.LossFunction().binary_crossentropy_forth, optimizer=optimizers.Adagrad(lr=learning_rate), metrics=['accuracy'])
+
+    model_save_path = 'model/generator_bce_{epoch:02d}.h5'
+    cp_cb = keras.callbacks.ModelCheckpoint(filepath=fpath, monitor='val_loss', verbose=1, period=model_save_ratio)
+
+    model_generator.fit(x=X_train,y=Y_train,batch_size=batch_size,epochs=num_epoch,verbose=1,validation_data=(X_val, Y_val), callbacks=[cp_cb])
+
+
+def train_salgan(args):
+    # parse parameters
+    l2_norm = args.l2_norm
+    batch_size = args.batch_size
+    num_epoch = args.num_epoch
+    learning_rate = args.learning_rate
+    img_width, img_height = args.image_size
+    loss_alpha = args.loss_alpha
+    model_save_ratio = args.model_save_ratio
+
+    X_train, Y_train = load_data(args.model_name)
+    
+    model_builder = model.ModelBuilder()
+
+    model_generator = model_builder.generator(img_width=img_width,img_height=img_height,l2_norm=l2_norm)
+    model_discriminator = model_builder.discriminator(img_width=img_width,img_height=img_height,l2_norm=l2_norm)
 
     output_true_batch, output_false_batch = np.ones((batch_size, 1)), np.zeros((batch_size, 1))
 
-    model_combine = model_builder.build_combine(model_generator,model_discriminator,img_width=256,img_height=192)
+    model_combine = model_builder.build_combine(model_generator,model_discriminator,img_width=img_width,img_height=img_height)
 
     model_discriminator.trainable = True
-    model_discriminator.compile(optimizer=optimizers.Adagrad(lr=3e-4), loss="binary_crossentropy")
+    model_discriminator.compile(optimizer=optimizers.Adagrad(lr=learning_rate), loss="binary_crossentropy")
     model_discriminator.trainable = False
     loss = [model.LossFunction().binary_crossentropy_forth, "binary_crossentropy"]
-    loss_weights = [0.005, 1]
-    model_combine.compile(optimizer=optimizers.Adagrad(lr=3e-4), loss=loss, loss_weights=loss_weights)
+    loss_weights = [loss_alpha, 1]
+    model_combine.compile(optimizer=optimizers.Adagrad(lr=learning_rate), loss=loss, loss_weights=loss_weights)
     model_discriminator.trainable = True
-
-    c_loss_list = []
-    d_loss_list = []
 
     for epoch in range(1,nb_epoch):
         print('epoch: {}/{}'.format(epoch, nb_epoch))
@@ -76,15 +144,22 @@ def train():
             
             model_discriminator.trainable = True
 
-        if epoch % 4 == 0:
-            save_all_weights(model_discriminator, model_generator, epoch)
+        if epoch % model_save_ratio == 0:
+            save_all_weights(epoch, model_generator, model_discriminator)
 
         print("discriminator_loss", np.mean(d_losses), "combine_loss", np.mean(c_losses), "generator_loss", np.mean(g_losses))
 
-        c_loss_list.append(c_losses)
-        d_loss_list.append(d_losses)
 
-        sample_img = model_generator.predict(np.array([X_train[0]]))
-        plt.imsave('result_image/{}.jpg'.format(epoch),sample_img.reshape(192,256))
+if __name__ == '__main__':
+    args = parse_args()
+    model_name = args.model_name
 
-train()
+    if model_name == 'salgan':
+        train_salgan(args)
+    else:
+        train_bce(args)
+
+# TODO
+# train_BCEとtrain_salganに分けて引数で処理確認
+# predictionのファイル作成
+# validationのファイル作成
