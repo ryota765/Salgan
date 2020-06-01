@@ -30,6 +30,8 @@ if __name__ == '__main__':
 
     gt_array, pred_array = load_data(gt_path, prediction_path)
 
+    assert gt_array.shape == pred_array.shape
+
     auc_b, auc_s, nss, cc = metrics.SaliencyMetrics().calculate_metrics(pred_array,gt_array)
 
     print('auc_b', auc_b)
