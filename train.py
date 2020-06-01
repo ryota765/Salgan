@@ -169,5 +169,4 @@ if __name__ == '__main__':
         train_bce(args)
 
 # TODO
-# validationのファイル作成
 # READMEを書く

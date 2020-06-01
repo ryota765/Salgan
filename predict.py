@@ -8,7 +8,7 @@ def parse_args():
         description='Parameters for saliency map generator models.')
 
     parser.add_argument('--target_data_path', type=str,
-                        help='path to .npy file of input data', default='data/Xtest.npy')
+                        help='path to .npy file of input data', default='data/Xval.npy')
     parser.add_argument('--output_data_path', type=str,
                         help='path to output prediction in .npy file', default='prediction/pred.npy')
     parser.add_argument('--load_model_path', type=str,

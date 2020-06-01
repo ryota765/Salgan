@@ -4,3 +4,4 @@ result_image/
 data/
 prediction/
 .DS_Store
+__pycache__
