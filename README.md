@@ -1,13 +1,13 @@
 # Implemention of SalGAN by Keras
 
-SalGAN is a model to generate saliency map proposed by J.Pan in 2017.
-This repository is an implementation of Salgan using Keras framework.
+SalGAN is a model to generate saliency map proposed by J.Pan in 2017.  
+This repository is an implementation of Salgan using Keras framework.  
 [SalGAN: Visual Saliency Prediction with Generative Adversarial Networks](https://arxiv.org/abs/1701.01081) - Original Paper of SalGAN
 
 ## Getting Started
 
 ### Download scripts
-Clone this repository and add some additional directories.
+Clone this repository and add some additional directories.  
 Your directory should be as shown below.
 
 ```
@@ -27,10 +27,10 @@ salgan/
 
 ### Download datasets
 
-There are several datasets used for saliency map generation.
-This implementation uses SALICON datasets which is same with original paper.
-SALICON datasets consists of training (10,000), validation (5,000), and test (1,000) datasets.
-This data can be downloaded from the site below.
+There are several datasets used for saliency map generation.  
+This implementation uses SALICON datasets which is same with original paper.  
+SALICON datasets consists of training (10,000), validation (5,000), and test (1,000) datasets.  
+This data can be downloaded from the site below.  
 [SALICON challenge 2017](http://salicon.net/challenge-2017/) - HP for SALICON challenge 2017
 
 Set the downloaded images under data directory as shown below.
@@ -53,7 +53,7 @@ data/
 
 ### Download model weight
 
-If you want to make use of pre-trained model weight, the weight file can be downloaded from link below.
+If you want to make use of pre-trained model weight, the weight file can be downloaded from link below.  
 [Pre-trained model weight file](https://drive.google.com/open?id=1A0AovgjQQuNtt-sCg9WREG91ZMus__Lw) - Model weight file uploaded on google drive
 
 Set the downloaded file under model directory.
@@ -68,7 +68,7 @@ model/
 
 ### Preprocessing
 
-Convert image and map data to .npy file using the command below.
+Convert image and map data to .npy file using the command below.  
 .npy files will be output under data directory.
 
 ```
@@ -77,7 +77,7 @@ python preprocess.py
 
 ### training
 
-There are several parameters which can be checked in train.py
+There are several parameters which can be checked in train.py  
 Also, fine-tuning can be done by using --load_model_path flag.
 
 ```
@@ -94,7 +94,7 @@ python predict.py --load_model_path=model/weights_bce4_15.hdf5 --target_data_pat
 
 ### Validation
 
-Validation of saliency maps using 4 index. (AUC_borji, AUC_shuffled, nss, cc)
+Validation of saliency maps using 4 index. (AUC_borji, AUC_shuffled, nss, cc)  
 Load ground truth and corresponding prediction map file.
 
 ```
