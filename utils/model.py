@@ -1,6 +1,17 @@
 from keras.applications.vgg16 import VGG16
 from keras.models import Sequential, Model, model_from_json
-from keras.layers import Input, InputLayer, Activation, Dropout, Flatten, Dense, Conv2D, UpSampling2D, AveragePooling2D, MaxPooling2D
+from keras.layers import (
+    Input,
+    InputLayer,
+    Activation,
+    Dropout,
+    Flatten,
+    Dense,
+    Conv2D,
+    UpSampling2D,
+    AveragePooling2D,
+    MaxPooling2D,
+)
 from keras import optimizers
 import keras.backend as K
 import tensorflow as tf
@@ -8,6 +19,7 @@ import keras.backend.tensorflow_backend as tfb
 import keras
 from keras.layers.merge import concatenate
 from keras import regularizers
+
 
 class ModelBuilder():
     '''Construct model for salgan and BCE
